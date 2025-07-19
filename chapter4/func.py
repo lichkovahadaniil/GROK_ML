@@ -112,3 +112,54 @@ def predict_evaluate(model_coefs, degree, X_train, Y_train, X_test, Y_test):
     plt.show()
 
     return mse
+
+def train_plot_regular_reg(X_train, Y_train, X_test, Y_test, degree, regularization_type, alpha = 1.0):
+    # the more alpha, the stronger the penalty
+    X_train = np.array(X_train).reshape(-1, 1)
+    Y_train = np.array(Y_train)
+    X_test = np.array(X_test).reshape(-1, 1)
+    Y_test = np.array(Y_test)
+
+    poly = PolynomialFeatures(degree = degree)
+    X_train_poly = poly.fit_transform(X_train)
+    X_test_poly = poly.transform(X_test) # X_test data converted like X_train data
+
+    if regularization_type == 'L1':
+        model = Lasso(alpha = alpha, max_iter = 10000) # 10000 for solve convergence issues
+    elif regularization_type == 'L2':
+        model = Ridge(alpha = alpha, max_iter = 10000) 
+    else:
+        raise ValueError("regularization type must be L1 or L2")
+
+    model.fit(X_train_poly, Y_train)
+    Y_pred_test = model.predict(X_test_poly)
+
+    # RMSE
+    rmse = np.sqrt(mean_squared_error(Y_test, Y_pred_test))
+
+    # plotting
+    plt.figure(figsize = (8,6))
+
+    plt.scatter(X_train, Y_train, color = 'blue', label = 'training data')
+    plt.scatter(X_test, Y_test, color = 'green', label = 'testing data')
+
+    full_X = np.concatenate((X_train, X_test))
+    full_Y = np.concatenate((Y_train, Y_test))
+
+    X_plot = np.linspace(np.min(full_X), np.max(full_X), 100).reshape(-1, 1)
+    X_plot_poly = poly.transform(X_plot)
+    Y_plot_pred = model.predict(X_plot_poly)
+
+    plt.plot(X_plot, Y_plot_pred, color = 'red', label = f'polynomial regression degree {degree} with regularization {regularization_type}, alpha = {alpha}')
+    plt.xlabel('X')
+    plt.ylabel('Y')
+    plt.title(f'regulatization polynomial regression (degree {degree}) with training/testing data')
+    plt.legend()
+    plt.grid(True)
+
+    plt.xlim(np.min(full_X), np.max(full_X))
+    plt.ylim(np.min(full_Y), np.max(full_Y))
+
+    plt.show()
+
+    return rmse
